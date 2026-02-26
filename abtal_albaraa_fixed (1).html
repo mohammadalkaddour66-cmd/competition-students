@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة أبطال البراءة - منصة الحفظ التفاعلية</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        clay: '#D27D56',
+                        beige: '#F9F6F0',
+                        brown: '#3E2723',
+                        gold: '#D4AF37',
+                        copper: '#B95C3E'
+                    },
+                    fontFamily: {
+                        sans: ['Tajawal', 'sans-serif'],
+                        serif: ['Amiri', 'serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(62,39,35,0.08)',
+                        'glow': '0 0 15px rgba(210,125,86,0.3)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* التنسيقات الأساسية */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #F9F6F0;
+            /* إزالة overflow: hidden من body وتركه للـ layout الداخلي */
+        }
+
+        /* تخصيص شريط التمرير */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D27D56; }
+
+        /* --- البطاقات القلابة --- */
+        .flip-container {
+            perspective: 1200px;
+            width: 100%;
+        }
+
+        .flip-inner {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .flip-front, .flip-back {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+
+        .flip-back {
+            transform: rotateY(180deg);
+        }
+
+        .flip-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        /* تأثير دخول */
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(15px);
+        }
+        
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* تخصيص مربع البحث */
+        #searchInput::placeholder {
+            color: #9ca3af;
+        }
+    </style>
+</head>
+
+<!-- FIX: إزالة overflow-hidden من هنا ونقله للـ layout الداخلي -->
+<body class="text-brown font-sans antialiased selection:bg-clay selection:text-white">
+
+    <!-- غطاء للموبايل -->
+    <div id="mobileOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-brown/50 z-40 hidden lg:hidden backdrop-blur-sm"></div>
+
+    <!-- الـ Layout الرئيسي: flex بارتفاع الشاشة -->
+    <div class="flex h-screen w-full overflow-hidden">
+
+        <!-- الشريط الجانبي -->
+        <aside id="sidebar" class="fixed lg:static inset-y-0 right-0 z-50 w-72 bg-brown text-white flex flex-col transform translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none flex-shrink-0">
+            <!-- ترويسة اللوجو -->
+            <div class="p-8 text-center relative border-b border-white/10 flex-shrink-0">
+                <button onclick="toggleSidebar()" class="absolute top-4 left-4 lg:hidden text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+                <div class="w-16 h-16 bg-gradient-to-br from-clay to-copper rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-glow">
+                    <i class="fa-solid fa-moon text-3xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-bold font-serif text-white tracking-wide">أبطال البراءة</h1>
+                <p class="text-xs text-gold font-bold mt-2 tracking-widest bg-white/10 inline-block px-3 py-1 rounded-full">رمضان ١٤٤٥ هـ</p>
+            </div>
+
+            <!-- قائمة التنقل -->
+            <nav class="flex-1 mt-6 px-4 space-y-3 overflow-y-auto" id="navMenu"></nav>
+
+            <!-- تذييل الشريط الجانبي -->
+            <div class="p-6 border-t border-white/10 flex-shrink-0">
+                <div class="bg-gradient-to-r from-white/5 to-transparent p-4 rounded-xl border-r-2 border-gold">
+                    <div class="flex items-center gap-2 mb-2 text-gold">
+                        <i class="fa-solid fa-lightbulb text-sm"></i>
+                        <span class="text-sm font-bold">طريقة الاستخدام:</span>
+                    </div>
+                    <p class="text-xs text-gray-300 leading-relaxed font-medium">
+                        اقرأ السؤال، فكر بالإجابة، ثم اضغط على البطاقة للتأكد. إذا حفظتها اضغط على زر <span class="text-green-400">"تم الحفظ"</span> ليزيد تقدمك.
+                    </p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- منطقة المحتوى الرئيسية -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            
+            <!-- الترويسة العلوية -->
+            <header class="bg-white px-6 py-4 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 z-10 border-b border-gray-100 flex-shrink-0">
+                
+                <div class="flex items-center justify-between w-full md:w-auto">
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleSidebar()" class="lg:hidden w-10 h-10 rounded-lg bg-beige flex items-center justify-center text-brown hover:bg-clay hover:text-white transition-colors">
+                            <i class="fa-solid fa-bars text-lg"></i>
+                        </button>
+                        <div>
+                            <h2 id="currentCategoryTitle" class="font-bold text-xl text-brown">براعم البراءة</h2>
+                            <p id="currentCategorySubtitle" class="text-xs text-gray-500">الصف الأول والثاني</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- البحث وشريط التقدم -->
+                <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                    <!-- مربع البحث -->
+                    <div class="relative w-full sm:w-64">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </div>
+                        <input type="text" id="searchInput" oninput="handleSearch()" placeholder="ابحث عن سؤال..." 
+                               class="w-full bg-beige border border-gray-200 text-brown text-sm rounded-xl focus:ring-2 focus:ring-clay block pr-10 p-2.5 outline-none transition-shadow">
+                    </div>
+
+                    <!-- شريط التقدم -->
+                    <div class="bg-beige px-4 py-2 rounded-xl w-full sm:w-64 border border-gray-200">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-bold text-brown">الإنجاز الكلي</span>
+                            <span id="progressText" class="text-xs font-black text-clay">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div id="progressBar" class="bg-gradient-to-l from-clay to-copper h-2 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- منطقة تمرير البطاقات -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-8" id="mainScrollArea">
+                
+                <!-- رسالة ترحيبية -->
+                <div class="max-w-6xl mx-auto mb-8 flex justify-between items-end">
+                    <div>
+                        <h3 class="text-2xl font-serif text-brown font-bold mb-1">أسئلة المسابقة</h3>
+                        <p class="text-sm text-gray-500">اضغط على أي بطاقة لاختبار ذاكرتك.</p>
+                    </div>
+                    <button onclick="resetProgress()" class="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-100">
+                        <i class="fa-solid fa-rotate-left"></i> تصفير التقدم
+                    </button>
+                </div>
+
+                <!-- شبكة البطاقات -->
+                <div id="questionsGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 max-w-6xl mx-auto pb-10"></div>
+
+                <!-- حالة عدم وجود نتائج -->
+                <!-- FIX: إزالة class="hidden flex-col" المتعارضة، واستخدام display مباشر -->
+                <div id="noResults" style="display:none;" class="flex-col items-center justify-center py-20 text-center">
+                    <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-4 shadow-soft text-gray-300">
+                        <i class="fa-solid fa-search text-4xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-brown">لم نجد أي سؤال مطابق</h3>
+                    <p class="text-sm text-gray-500 mt-1">حاول استخدام كلمات مختلفة في البحث.</p>
+                </div>
+
+            </main>
+        </div>
+
+    </div><!-- نهاية الـ Layout الرئيسي -->
+
+    <script>
+        // --- 1. قاعدة البيانات ---
+        const DB = {
+            categories: [
+                { id: 'baraem', title: 'براعم البراءة', sub: 'الصف الأول والثاني', icon: 'fa-seedling' },
+                { id: 'fursan', title: 'فرسان البراءة', sub: 'الصف الثالث والرابع', icon: 'fa-bolt' },
+                { id: 'rowad', title: 'رواد البراءة', sub: 'الصف الخامس والسادس', icon: 'fa-trophy' }
+            ],
+            questions: {
+                baraem: [
+                    { id: 'b1', q: "ما هو الشهر الذي نصومه كل عام؟", a: "شهر رمضان" },
+                    { id: 'b2', q: "ماذا نسمي الوجبة التي نأكلها قبل الفجر؟", a: "السحور" },
+                    { id: 'b3', q: "ماذا نسمي الوجبة التي نأكلها عند غياب الشمس؟", a: "الإفطار" },
+                    { id: 'b4', q: "كم عدد أركان الإسلام؟", a: "خمسة أركان" },
+                    { id: 'b5', q: "ما هو الركن الرابع من أركان الإسلام؟", a: "صوم رمضان" },
+                    { id: 'b6', q: "من هو ربك؟", a: "الله سبحانه وتعالى" },
+                    { id: 'b7', q: "من هو نبيك؟", a: "محمد ﷺ" },
+                    { id: 'b8', q: "ما هو دينك؟", a: "الإسلام" },
+                    { id: 'b9', q: "ماذا نقول قبل البدء بالأكل؟", a: "بسم الله" },
+                    { id: 'b10', q: "ماذا نقول بعد الانتهاء من الأكل؟", a: "الحمد لله" },
+                    { id: 'b11', q: "أين توجد الكعبة المشرفة؟", a: "في مكة المكرمة" },
+                    { id: 'b12', q: "ما هو الكتاب الذي أنزله الله على نبينا محمد ﷺ؟", a: "القرآن الكريم" },
+                    { id: 'b13', q: "ما اسم صلاة الجماعة في ليل رمضان؟", a: "صلاة التراويح" },
+                    { id: 'b14', q: "كم عدد الصلوات في اليوم؟", a: "خمس صلوات" },
+                    { id: 'b15', q: "أول صلاة في الصباح الباكر؟", a: "صلاة الفجر" },
+                    { id: 'b16', q: "العيد بعد رمضان مباشرة؟", a: "عيد الفطر" },
+                    { id: 'b17', q: "من هي أم النبي محمد ﷺ؟", a: "آمنة بنت وهب" },
+                    { id: 'b18', q: "من هو والد النبي محمد ﷺ؟", a: "عبد الله بن عبد المطلب" },
+                    { id: 'b19', q: "سورة نقرأها في كل ركعة؟", a: "سورة الفاتحة" },
+                    { id: 'b20', q: "ماذا نقول عندما نعطس؟", a: "الحمد لله" },
+                    { id: 'b21', q: "كم عدد أصابع اليد الواحدة؟", a: "خمسة أصابع" },
+                    { id: 'b22', q: "كلمة الدخول في الصلاة؟", a: "الله أكبر" },
+                    { id: 'b23', q: "من هو أول الأنبياء؟", a: "سيدنا آدم عليه السلام" },
+                    { id: 'b24', q: "ما هي قبلة المسلمين؟", a: "الكعبة المشرفة" },
+                    { id: 'b25', q: "هل نحب النبي محمد ﷺ؟", a: "نعم، نحن نحبه كثيراً" }
+                ],
+                fursan: [
+                    { id: 'f1', q: "في أي ليلة نزل القرآن الكريم أول مرة؟", a: "ليلة القدر" },
+                    { id: 'f2', q: "كم عدد أركان الإيمان؟", a: "ستة أركان" },
+                    { id: 'f3', q: "ما اسم الملك الموكل بالوحي؟", a: "جبريل عليه السلام" },
+                    { id: 'f4', q: "باب الجنة للصائمين؟", a: "باب الريان" },
+                    { id: 'f5', q: "من هو النبي الملقب بأبي الأنبياء؟", a: "سيدنا إبراهيم" },
+                    { id: 'f6', q: "الكتاب الذي نزل على عيسى؟", a: "الإنجيل" },
+                    { id: 'f7', q: "الكتاب الذي نزل على موسى؟", a: "التوراة" },
+                    { id: 'f8', q: "أول من أذن في الإسلام؟", a: "بلال بن رباح" },
+                    { id: 'f9', q: "أول قبلة للمسلمين؟", a: "المسجد الأقصى" },
+                    { id: 'f10', q: "صحابي هاجر مع النبي ﷺ؟", a: "أبو بكر الصديق" },
+                    { id: 'f11', q: "كم سنة استمر نزول القرآن؟", a: "23 سنة" },
+                    { id: 'f12', q: "لقب النبي ﷺ قبل البعثة؟", a: "الصادق الأمين" },
+                    { id: 'f13', q: "ما اسم ناقة النبي ﷺ؟", a: "القصواء" },
+                    { id: 'f14', q: "من النبي الذي ابتلعه الحوت؟", a: "سيدنا يونس" },
+                    { id: 'f15', q: "سورة تعدل ثلث القرآن؟", a: "سورة الإخلاص" },
+                    { id: 'f16', q: "كم عدد أجزاء القرآن؟", a: "30 جزءاً" },
+                    { id: 'f17', q: "متى فُرض الصيام؟", a: "2 هجرية" },
+                    { id: 'f18', q: "غار نزل فيه الوحي؟", a: "غار حراء" },
+                    { id: 'f19', q: "أول من آمنت من النساء؟", a: "خديجة بنت خويلد" },
+                    { id: 'f20', q: "أول مسجد بُني في الإسلام؟", a: "مسجد قباء" },
+                    { id: 'f21', q: "رحلة النبي ﷺ للقدس؟", a: "الإسراء والمعراج" },
+                    { id: 'f22', q: "نبي كلمه الله مباشرة؟", a: "سيدنا موسى" },
+                    { id: 'f23', q: "عدد ركعات صلاة المغرب؟", a: "3 ركعات" },
+                    { id: 'f24', q: "كلمة الدخول في الإسلام؟", a: "الشهادتان" },
+                    { id: 'f25', q: "ليلة القدر خير من كم شهر؟", a: "ألف شهر" }
+                ],
+                rowad: [
+                    { id: 'r1', q: "أعظم آية في القرآن الكريم؟", a: "آية الكرسي" },
+                    { id: 'r2', q: "أول غزوة في الإسلام في رمضان؟", a: "غزوة بدر الكبرى" },
+                    { id: 'r3', q: "الملقب بسيف الله المسلول؟", a: "خالد بن الوليد" },
+                    { id: 'r4', q: "سورة تُسمى قلب القرآن؟", a: "سورة يس" },
+                    { id: 'r5', q: "نبي صبر على المرض طويلاً؟", a: "سيدنا أيوب" },
+                    { id: 'r6', q: "سورة لا تبدأ بالبسملة؟", a: "سورة التوبة" },
+                    { id: 'r7', q: "كم عدد سور القرآن؟", a: "114 سورة" },
+                    { id: 'r8', q: "من هو الفاروق؟", a: "عمر بن الخطاب" },
+                    { id: 'r9', q: "دابة الإسراء والمعراج؟", a: "البراق" },
+                    { id: 'r10', q: "من هم أولو العزم من الرسل؟", a: "نوح، إبراهيم، موسى، عيسى، محمد ﷺ" },
+                    { id: 'r11', q: "سورة تُسمى عروس القرآن؟", a: "سورة الرحمن" },
+                    { id: 'r12', q: "نبي سُخرت له الريح والجن؟", a: "سيدنا سليمان" },
+                    { id: 'r13', q: "أطول سورة في القرآن؟", a: "سورة البقرة" },
+                    { id: 'r14', q: "كم سجدة تلاوة في القرآن؟", a: "15 سجدة" },
+                    { id: 'r15', q: "في أي شهر تم فتح مكة؟", a: "شهر رمضان" },
+                    { id: 'r16', q: "من هو ذو النورين؟", a: "عثمان بن عفان" },
+                    { id: 'r17', q: "أصغر أبناء النبي محمد ﷺ؟", a: "إبراهيم" },
+                    { id: 'r18', q: "دعاء ليلة القدر؟", a: "اللهم إنك عفو تحب العفو فاعفُ عني" },
+                    { id: 'r19', q: "من خاتم الأنبياء؟", a: "سيدنا محمد ﷺ" },
+                    { id: 'r20', q: "سورة بدأت باسم فاكهتين؟", a: "سورة التين" },
+                    { id: 'r21', q: "من النبي الذي بنى السفينة؟", a: "سيدنا نوح" },
+                    { id: 'r22', q: "صدقة واجبة قبل العيد؟", a: "زكاة الفطر" },
+                    { id: 'r23', q: "سنوات الدعوة في مكة؟", a: "13 سنة" },
+                    { id: 'r24', q: "سورة تنجي من عذاب القبر؟", a: "سورة الملك" },
+                    { id: 'r25', q: "من هو أسد الله؟", a: "حمزة بن عبد المطلب" }
+                ]
+            }
+        };
+
+        // --- 2. الحالة ---
+        let state = {
+            currentCategory: 'baraem',
+            searchQuery: '',
+            memory: {}
+        };
+
+        // FIX: تحميل الذاكرة بشكل آمن مع معالجة الخطأ
+        try {
+            const saved = localStorage.getItem('albaraa_quiz_memory');
+            state.memory = saved ? JSON.parse(saved) : {};
+        } catch(e) {
+            state.memory = {};
+        }
+
+        // --- 3. وظائف التحكم ---
+
+        function initApp() {
+            renderNavMenu();
+            updateContent();
+        }
+
+        function renderNavMenu() {
+            const nav = document.getElementById('navMenu');
+            nav.innerHTML = DB.categories.map(cat => `
+                <button onclick="changeCategory('${cat.id}')" 
+                        class="w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 group ${state.currentCategory === cat.id ? 'bg-clay shadow-lg scale-105' : 'hover:bg-white/5 text-gray-400 hover:text-white'}">
+                    <div class="p-2.5 rounded-xl ${state.currentCategory === cat.id ? 'bg-white/20' : 'bg-white/5 group-hover:bg-white/10'}">
+                        <i class="fa-solid ${cat.icon} text-lg"></i>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-sm text-white">${cat.title}</div>
+                        <div class="text-[10px] ${state.currentCategory === cat.id ? 'text-white/80' : 'text-gray-500'}">${cat.sub}</div>
+                    </div>
+                </button>
+            `).join('');
+        }
+
+        function changeCategory(catId) {
+            state.currentCategory = catId;
+            state.searchQuery = '';
+            document.getElementById('searchInput').value = '';
+            
+            const catObj = DB.categories.find(c => c.id === catId);
+            document.getElementById('currentCategoryTitle').innerText = catObj.title;
+            document.getElementById('currentCategorySubtitle').innerText = catObj.sub;
+
+            if(window.innerWidth < 1024) toggleSidebar();
+            
+            renderNavMenu();
+            updateContent();
+            document.getElementById('mainScrollArea').scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function handleSearch() {
+            state.searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+            updateContent();
+        }
+
+        function updateContent() {
+            const grid = document.getElementById('questionsGrid');
+            const noResults = document.getElementById('noResults');
+            grid.innerHTML = '';
+            
+            let filtered = DB.questions[state.currentCategory].filter(item => 
+                item.q.toLowerCase().includes(state.searchQuery) || 
+                item.a.toLowerCase().includes(state.searchQuery)
+            );
+
+            // FIX: استخدام style.display بدلاً من classList لتفادي التعارض بين hidden و flex
+            if (filtered.length === 0) {
+                grid.style.display = 'none';
+                noResults.style.display = 'flex';
+            } else {
+                grid.style.display = '';
+                noResults.style.display = 'none';
+                
+                filtered.forEach((item, index) => {
+                    const originalIndex = DB.questions[state.currentCategory].findIndex(q => q.id === item.id) + 1;
+                    const isSaved = state.memory[item.id] || false;
+                    const delay = index * 50;
+
+                    // FIX: استخدام div بدلاً من innerHTML للبطاقات لتفادي مشاكل innerHTML مع event handlers
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'flip-container fade-in-up';
+                    wrapper.style.animationDelay = delay + 'ms';
+
+                    wrapper.innerHTML = `
+                        <div class="flip-inner" id="card-${item.id}" onclick="flipCard('${item.id}')">
+                            
+                            <!-- الوجه الأمامي -->
+                            <div class="flip-front bg-white shadow-soft border-r-4 ${isSaved ? 'border-green-500' : 'border-clay'}">
+                                <div class="flex justify-between items-start mb-3">
+                                    <span class="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded-md">سؤال #${originalIndex}</span>
+                                    <i class="fa-solid fa-circle-check text-xl transition-colors duration-300 ${isSaved ? 'text-green-500' : 'text-gray-200'}"></i>
+                                </div>
+                                <p class="text-[17px] font-bold text-brown leading-relaxed flex-1 py-2">${item.q}</p>
+                                <div class="mt-4 flex items-center gap-1 text-[11px] text-clay font-bold opacity-80">
+                                    <span>انقر للجواب</span>
+                                    <i class="fa-solid fa-arrow-left-long"></i>
+                                </div>
+                            </div>
+
+                            <!-- الوجه الخلفي -->
+                            <div class="flip-back bg-brown text-white shadow-soft border-r-4 border-gold">
+                                <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/10">
+                                    <span class="text-[11px] text-gold font-bold"><i class="fa-solid fa-key ml-1"></i> الإجابة</span>
+                                    <button onclick="toggleSave(event, '${item.id}')" 
+                                            class="px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-300 border ${isSaved ? 'bg-green-600 border-green-500 text-white' : 'bg-white/5 border-white/20 hover:bg-white/10 text-gray-200'}">
+                                        ${isSaved ? '<i class="fa-solid fa-check ml-1"></i> محفوظ' : 'حفظت؟'}
+                                    </button>
+                                </div>
+                                <div class="flex-1 flex items-center justify-center py-2">
+                                    <p class="text-[19px] font-bold leading-relaxed text-beige text-center">${item.a}</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    `;
+
+                    grid.appendChild(wrapper);
+                });
+            }
+
+            updateProgress();
+        }
+
+        // FIX: flipCard يغير class على flip-inner مباشرة (وليس على الـ wrapper)
+        function flipCard(id) {
+            const cardInner = document.getElementById('card-' + id);
+            if (cardInner) {
+                cardInner.classList.toggle('is-flipped');
+            }
+        }
+
+        function toggleSave(event, id) {
+            event.stopPropagation();
+            state.memory[id] = !state.memory[id];
+            
+            // FIX: حفظ آمن
+            try {
+                localStorage.setItem('albaraa_quiz_memory', JSON.stringify(state.memory));
+            } catch(e) {}
+            
+            const cardInner = document.getElementById('card-' + id);
+            if (!cardInner) return;
+
+            const frontFace = cardInner.querySelector('.flip-front');
+            const checkIcon = frontFace.querySelector('.fa-circle-check');
+            const saveBtn = cardInner.querySelector('.flip-back button');
+
+            if (state.memory[id]) {
+                frontFace.classList.remove('border-clay');
+                frontFace.classList.add('border-green-500');
+                checkIcon.classList.remove('text-gray-200');
+                checkIcon.classList.add('text-green-500');
+                saveBtn.className = "px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-300 border bg-green-600 border-green-500 text-white";
+                saveBtn.innerHTML = '<i class="fa-solid fa-check ml-1"></i> محفوظ';
+            } else {
+                frontFace.classList.remove('border-green-500');
+                frontFace.classList.add('border-clay');
+                checkIcon.classList.remove('text-green-500');
+                checkIcon.classList.add('text-gray-200');
+                saveBtn.className = "px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-300 border bg-white/5 border-white/20 hover:bg-white/10 text-gray-200";
+                saveBtn.innerHTML = 'حفظت؟';
+            }
+
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const currentQuestions = DB.questions[state.currentCategory];
+            const total = currentQuestions.length;
+            const saved = currentQuestions.filter(q => state.memory[q.id]).length;
+            const percentage = total === 0 ? 0 : Math.round((saved / total) * 100);
+            
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressText').innerText = percentage + '%';
+        }
+
+        function resetProgress() {
+            if(confirm('هل أنت متأكد أنك تريد حذف تقدمك والبدء من جديد؟')) {
+                DB.questions[state.currentCategory].forEach(q => {
+                    delete state.memory[q.id];
+                });
+                try {
+                    localStorage.setItem('albaraa_quiz_memory', JSON.stringify(state.memory));
+                } catch(e) {}
+                updateContent();
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            sidebar.classList.toggle('translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
